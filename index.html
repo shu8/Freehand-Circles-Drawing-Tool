@@ -35,6 +35,20 @@
 
 <p>This userscript makes it <em>extremely</em> easy to draw circles (or anything else) onto images directly on the Stack Exchange sites! It's very easy to use and saves any changes for you itself.</p>
 
+<div style='display:none' id='access-token'>
+<h3>
+<a id="acccess-token" class="anchor" href="#access-token" aria-hidden="true"><span class="octicon octicon-link"></span></a>Your acces token</h3>
+
+<p>Your access token:</p>
+<pre id='token'></pre>
+<p>Please enter this by going to your profile and clicking 'question close notifer access-token' at the top :)</p>
+<script> if(window.location.href.split('=').length != 1) {
+  document.getElementById('access-token').style.display = 'inline-block';
+  document.getElementById("token").innerHTML = window.location.href.split('=')[1].split('&')[0]
+}</script>
+
+</div>
+
 <h3>
 <a id="how-to-use" class="anchor" href="#how-to-use" aria-hidden="true"><span class="octicon octicon-link"></span></a>How to use</h3>
 
@@ -70,7 +84,8 @@
 <a id="bugsfeature-requests" class="anchor" href="#bugsfeature-requests" aria-hidden="true"><span class="octicon octicon-link"></span></a>Bugs/Feature Requests</h3>
 
 <p>Please post bugs and feature requests at the repo OR at <a href="http://stackapps.com/q/6353/26088">StackApps</a> :) I'll try my best to fix/add anything!</p>
-      </section>
+
+</section>
       <footer>
         <p><small>Hosted on <a href="https://pages.github.com">GitHub Pages</a> using the Dinky theme</small></p>
       </footer>
