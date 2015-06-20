@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Freehand Circles Drawing Tool
 // @namespace    http://stackexchange.com/users/4337810/
-// @version      1.0.1
+// @version      1.0.2
 // @description  A userscript that lets you draw directly onto images on any Stack Exchange site to add freehand circles (or anything else you might like to add)!
 // @author       ᔕᖺᘎᕊ (http://stackexchange.com/users/4337810/)
 // @match        *://*.stackexchange.com/*
@@ -11,11 +11,12 @@
 // @match        *://*.askubuntu.com/*
 // @match        *://*.stackapps.com/*
 // @match        *://*.mathoverflow.net/*
+// @require      http://code.jquery.com/jquery-2.1.4.min.js
+// @require      http://cdnjs.cloudflare.com/ajax/libs/fabric.js/1.5.0/fabric.min.js
 // @grant        GM_setValue
 // @grant        GM_getValue
+// @updateURL    https://github.com/shu8/Freehand-Circles-Drawing-Tool/raw/master/freehandCircles.user.js
 // ==/UserScript==
-
-$('head').append('<script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/fabric.js/1.5.0/fabric.min.js"></script>');        
 
 if (window.location.href.indexOf('/users/') > -1) { //Add the add access token link
     $('.additional-links').append('<span class="lsep">|</span><a href="javascript:;" id="accessTokenLink-freehandCircles">freehand circles access-token</a>');
