@@ -17,6 +17,17 @@
 
 $('head').append('<script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/fabric.js/1.5.0/fabric.min.js"></script>');        
 
+if (window.location.href.indexOf('/users/') > -1) { //Add the add access token link
+    $('.additional-links').append('<span class="lsep">|</span><a href="javascript:;" id="accessTokenLink-freehandCircles">freehand circles access-token</a>');
+    $('.sub-header-links.fr').append('<span class="lsep">|</span><a href="javascript:;" id="accessTokenLink-freehandCircles">freehand circles access-token</a>'); //Old profile (pre Feb-2015)
+    $('#accessTokenLink-freehandCircles').click(function() {
+        var token = window.prompt('Please enter your access token:');
+        if(token) {
+            GM_setValue("freehandCircles-access_token", token);
+        }
+    });
+}
+
 function addToImgurData(dataURL, callback) { //add NEW image to imgur (ie. the image the user has drawn)
     $.ajax({ 
         url: 'https://api.imgur.com/3/image',
@@ -67,78 +78,82 @@ function deleteImage(hash) { //delete the i.imgur.com version of the OLD ORIGINA
     });    
 }
 
-$('.question img, .answer img').not('.fw img').each(function () { //add edit and delete buttons to all images
-    $(this).after("<input class='edit' style='position:absolute; right:10px;' type='button' value='edit'><br><input type='button' id='save' style='position:absolute; right:10px;' value='save' class='save'>");
-});
+if(GM_getValue('freehandCircles-access_token', -1) != -1) { //if an access token IS set
+    $('.question img, .answer img').not('.fw img').each(function () { //add edit and delete buttons to all images
+        $(this).after("<input class='edit' style='position:absolute; right:10px;' type='button' value='edit'><br><input type='button' id='save' style='position:absolute; right:10px;' value='save' class='save'>");
+    });
 
-$(document).on('click', '.edit', function () { //edit
-    var origImage = $(this).parent().find('img');
-    var height = origImage.height(),
-        width = origImage.width();
-    $that = $(this);
-    
-    addToImgurURL(origImage.attr('src'), function(result) {
-        var newLink = result.data.link,
-            deletehash = result.data.deletehash;
-        //Add the new canvas:
-        $that.parent().find('img').replaceWith("<div id='wrapper' style='position:relative; display:inline-block;'><canvas style='position:absolute' id='edit_canvas' height='" + height + "' width='" + width + "'></canvas></div>");
+    $(document).on('click', '.edit', function () { //edit
+        var origImage = $(this).parent().find('img');
+        var height = origImage.height(),
+            width = origImage.width();
+        $that = $(this);
 
-        //initalize canvas with fabric.js
-        var canvas = window._canvas = new fabric.Canvas('edit_canvas', {
-            isDrawingMode: 1
-        });
+        addToImgurURL(origImage.attr('src'), function(result) {
+            var newLink = result.data.link,
+                deletehash = result.data.deletehash;
+            //Add the new canvas:
+            $that.parent().find('img').replaceWith("<div id='wrapper' style='position:relative; display:inline-block;'><canvas style='position:absolute' id='edit_canvas' height='" + height + "' width='" + width + "'></canvas></div>");
 
-        //Settings:
-        canvas.freeDrawingBrush.color = "red";
-        canvas.freeDrawingBrush.width = 5;
+            //initalize canvas with fabric.js
+            var canvas = window._canvas = new fabric.Canvas('edit_canvas', {
+                isDrawingMode: 1
+            });
 
-        //background image (ie *the* image):
-        fabric.Image.fromURL(newLink, function (oImg) { //use 'newLink' <-- which is the NEW link at imgur.com and NOT stack.imgur.com because stack.imgur.com does not support CORS :(
-            oImg.scale(1.0);
-            oImg.width = width;
-            oImg.height = height;
-            canvas.add(oImg).setActiveObject(oImg);
-            canvas.renderAll();
-        }, {
-            crossOrigin: 'Anonymous' //the annoying crossorigin, which btw wouldn't work with a stack.imgur.com url :(
-        });
-        
-        $(document).on('click', '.save', function() { //save
-            var dataURL = canvas.toDataURL({format:'png'}); //DATA URL as a png       
-            $that = $(this);
-            addToImgurData(dataURL, function(data) { //save dataurl to imgur
-                parent = $that.parents('div.question,div.answer');
-                if(parent.hasClass('question')) { //for questions
-                   id = parent.attr('data-questionid');
-                } else { //for answers
-                   id = parent.attr('data-answerid');
-                }
-                var accessToken = "(aMH8lYnH259iXl(O*h5Xg))",
-                    sitename = $(location).attr('hostname');
+            //Settings:
+            canvas.freeDrawingBrush.color = "red";
+            canvas.freeDrawingBrush.width = 5;
 
-                link = "https://api.stackexchange.com/2.2/answers/"+id+"?order=desc&sort=activity&site="+sitename+"&filter=!9YdnSMldD"; //form the stackexchange api link
+            //background image (ie *the* image):
+            fabric.Image.fromURL(newLink, function (oImg) { //use 'newLink' <-- which is the NEW link at imgur.com and NOT stack.imgur.com because stack.imgur.com does not support CORS :(
+                oImg.scale(1.0);
+                oImg.width = width;
+                oImg.height = height;
+                canvas.add(oImg).setActiveObject(oImg);
+                canvas.renderAll();
+            }, {
+                crossOrigin: 'Anonymous' //the annoying crossorigin, which btw wouldn't work with a stack.imgur.com url :(
+            });
 
-                $.getJSON(link, function(json) { //edit the post with the new link
-                    body = json.items[0].body_markdown;
-                    x = origImage.attr('src').split('/')[3]; //get the original filename eg. dEOmp2.png
-                    regex = new RegExp("(http:.*?"+x+")", "gi");
-                    y = body.replace(regex, data.data.link); //replace the original URL with the NEW URL
-                    $.ajax({ //Make the edit
-                        type: "POST",
-                        url: "https://api.stackexchange.com/2.2/answers/259022/edit",
-                        data: {
-                            'body': y,
-                            'site': 'meta',
-                            'key': 'zOQ03LXlnDCLSM7yV)UVww((',
-                            'access_token': accessToken,
-                            'filter': '!9YdnSMlgz',
-                            'comment': 'Added freehand drawings (added by <http://stackapps.com/q/6353/26088>!)'
-                        }
-                    }).done(function() { //if this succeeds, delete the image we copied from stack.imgur.com to imgur.com because it is no longer needed!
-                        deleteImage(deletehash);                             
-                    });
-                }); //Stack Exchange API JSON function
-            }); //addToImgurData callback
-        }); //save click handler
-    }); //addToImgurURL callback
-}); //edit click handler
+            $(document).on('click', '.save', function() { //save
+                var dataURL = canvas.toDataURL({format:'png'}); //DATA URL as a png       
+                $that = $(this);
+                addToImgurData(dataURL, function(data) { //save dataurl to imgur
+                    parent = $that.parents('div.question,div.answer');
+                    if(parent.hasClass('question')) { //for questions
+                        id = parent.attr('data-questionid');
+                    } else { //for answers
+                        id = parent.attr('data-answerid');
+                    }
+                    var accessToken = GM_getValue('freehandCircles-access_token'),
+                        sitename = $(location).attr('hostname');
+
+                    link = "https://api.stackexchange.com/2.2/answers/"+id+"?order=desc&sort=activity&site="+sitename+"&filter=!9YdnSMldD"; //form the stackexchange api link
+
+                    $.getJSON(link, function(json) { //edit the post with the new link
+                        body = json.items[0].body_markdown;
+                        x = origImage.attr('src').split('/')[3]; //get the original filename eg. dEOmp2.png
+                        regex = new RegExp("(http:.*?"+x+")", "gi");
+                        y = body.replace(regex, data.data.link); //replace the original URL with the NEW URL
+                        $.ajax({ //Make the edit
+                            type: "POST",
+                            url: "https://api.stackexchange.com/2.2/answers/259022/edit",
+                            data: {
+                                'body': y,
+                                'site': 'meta',
+                                'key': 'zOQ03LXlnDCLSM7yV)UVww((',
+                                'access_token': accessToken,
+                                'filter': '!9YdnSMlgz',
+                                'comment': 'Added freehand drawings (added by <http://stackapps.com/q/6353/26088>!)'
+                            }
+                        }).done(function() { //if this succeeds, delete the image we copied from stack.imgur.com to imgur.com because it is no longer needed!
+                            deleteImage(deletehash);                             
+                        });
+                    }); //Stack Exchange API JSON function
+                }); //addToImgurData callback
+            }); //save click handler
+        }); //addToImgurURL callback
+    }); //edit click handler
+} else { //if access token is not set
+    console.log('Please enter an access token. See more details at http://shu8.github.io/Freehand-Circles-Drawing-Tool');
+}
