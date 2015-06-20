@@ -150,6 +150,7 @@ if(GM_getValue('freehandCircles-access_token', -1) != -1) { //if an access token
                                 }
                             }).done(function() { //if this succeeds, delete the image we copied from stack.imgur.com to imgur.com because it is no longer needed!
                                 deleteImage(deletehash);                             
+                                alert('Successfully edited new image! :)');
                             });
                         });
                     } else { //for answers
@@ -174,6 +175,7 @@ if(GM_getValue('freehandCircles-access_token', -1) != -1) { //if an access token
                                 }
                             }).done(function() { //if this succeeds, delete the image we copied from stack.imgur.com to imgur.com because it is no longer needed!
                                 deleteImage(deletehash);                             
+                                alert('Successfully edited new image! :)');
                             });
                         }); //SE API call
                     } //question/answer if
