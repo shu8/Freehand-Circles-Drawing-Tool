@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Freehand Circles Drawing Tool
 // @namespace    http://stackexchange.com/users/4337810/
-// @version      1.0
+// @version      1.0.1
 // @description  A userscript that lets you draw directly onto images on any Stack Exchange site to add freehand circles (or anything else you might like to add)!
 // @author       ᔕᖺᘎᕊ (http://stackexchange.com/users/4337810/)
 // @match        *://*.stackexchange.com/*
@@ -116,40 +116,67 @@ if(GM_getValue('freehandCircles-access_token', -1) != -1) { //if an access token
             });
 
             $(document).on('click', '.save', function() { //save
-                var dataURL = canvas.toDataURL({format:'png'}); //DATA URL as a png       
+                var dataURL = canvas.toDataURL({format:'png'}), //DATA URL as a png    
+                    link,
+                    sitename = $(location).attr('hostname'),
+                    accessToken = GM_getValue('freehandCircles-access_token'),
+                    editURL;
                 $that = $(this);
                 addToImgurData(dataURL, function(data) { //save dataurl to imgur
                     parent = $that.parents('div.question,div.answer');
                     if(parent.hasClass('question')) { //for questions
                         id = parent.attr('data-questionid');
+                        link = "https://api.stackexchange.com/2.2/questions/"+id+"?order=desc&sort=activity&site="+sitename+"&filter=!9YdnSIoKx"; //form the stackexchange api link
+                        editURL = "https://api.stackexchange.com/2.2/questions/"+id+"/edit";
+                        $.getJSON(link, function(json) { //edit the post with the new link
+                            body = json.items[0].body_markdown;
+                            title = json.items[0].title;
+                            tags = json.items[0].tags;
+                            x = origImage.attr('src').split('/')[3]; //get the original filename eg. dEOmp2.png
+                            regex = new RegExp("(http:.*?"+x+")", "gi");
+                            y = body.replace(regex, data.data.link); //replace the original URL with the NEW URL
+                            $.ajax({ //Make the edit
+                                type: "POST",
+                                url: editURL,
+                                data: {
+                                    'title': title,
+                                    'tags': tags.join(' '),                                    
+                                    'body': y.replace(/&gt;/g, '>').replace(/&#39;/g, "'").replace(/&quot;/, '"').replace(/&lt;/g, "<").replace(/&amp;/g, "&"),
+                                    'site': sitename,
+                                    'key': 'zOQ03LXlnDCLSM7yV)UVww((',
+                                    'access_token': accessToken,
+                                    'filter': '!9YdnSMlgz',
+                                    'comment': 'Added freehand drawings (added by <http://stackapps.com/q/6353/26088>!)'
+                                }
+                            }).done(function() { //if this succeeds, delete the image we copied from stack.imgur.com to imgur.com because it is no longer needed!
+                                deleteImage(deletehash);                             
+                            });
+                        });
                     } else { //for answers
                         id = parent.attr('data-answerid');
-                    }
-                    var accessToken = GM_getValue('freehandCircles-access_token'),
-                        sitename = $(location).attr('hostname');
-
-                    link = "https://api.stackexchange.com/2.2/answers/"+id+"?order=desc&sort=activity&site="+sitename+"&filter=!9YdnSMldD"; //form the stackexchange api link
-
-                    $.getJSON(link, function(json) { //edit the post with the new link
-                        body = json.items[0].body_markdown;
-                        x = origImage.attr('src').split('/')[3]; //get the original filename eg. dEOmp2.png
-                        regex = new RegExp("(http:.*?"+x+")", "gi");
-                        y = body.replace(regex, data.data.link); //replace the original URL with the NEW URL
-                        $.ajax({ //Make the edit
-                            type: "POST",
-                            url: "https://api.stackexchange.com/2.2/answers/259022/edit",
-                            data: {
-                                'body': y,
-                                'site': 'meta',
-                                'key': 'zOQ03LXlnDCLSM7yV)UVww((',
-                                'access_token': accessToken,
-                                'filter': '!9YdnSMlgz',
-                                'comment': 'Added freehand drawings (added by <http://stackapps.com/q/6353/26088>!)'
-                            }
-                        }).done(function() { //if this succeeds, delete the image we copied from stack.imgur.com to imgur.com because it is no longer needed!
-                            deleteImage(deletehash);                             
-                        });
-                    }); //Stack Exchange API JSON function
+                        link = "https://api.stackexchange.com/2.2/answers/"+id+"?order=desc&sort=activity&site="+sitename+"&filter=!9YdnSMldD"; //form the stackexchange api link
+                        editURL = "https://api.stackexchange.com/2.2/answers/"+id+"/edit";
+                        $.getJSON(link, function(json) { //edit the post with the new link
+                            body = json.items[0].body_markdown;
+                            x = origImage.attr('src').split('/')[3]; //get the original filename eg. dEOmp2.png
+                            regex = new RegExp("(http:.*?"+x+")", "gi");
+                            y = body.replace(regex, data.data.link); //replace the original URL with the NEW URL
+                            $.ajax({ //Make the edit
+                                type: "POST",
+                                url: editURL,
+                                data: {
+                                    'body': y.replace(/&gt;/g, '>').replace(/&#39;/g, "'").replace(/&quot;/, '"').replace(/&lt;/g, "<").replace(/&amp;/g, "&"),
+                                    'site': sitename,
+                                    'key': 'zOQ03LXlnDCLSM7yV)UVww((',
+                                    'access_token': accessToken,
+                                    'filter': '!9YdnSMlgz',
+                                    'comment': 'Added freehand drawings (added by <http://stackapps.com/q/6353/26088>!)'
+                                }
+                            }).done(function() { //if this succeeds, delete the image we copied from stack.imgur.com to imgur.com because it is no longer needed!
+                                deleteImage(deletehash);                             
+                            });
+                        }); //SE API call
+                    } //question/answer if
                 }); //addToImgurData callback
             }); //save click handler
         }); //addToImgurURL callback
