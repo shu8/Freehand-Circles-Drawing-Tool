@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Freehand Circles Drawing Tool
 // @namespace    http://stackexchange.com/users/4337810/
-// @version      1.0.2
+// @version      1.0.3
 // @description  A userscript that lets you draw directly onto images on any Stack Exchange site to add freehand circles (or anything else you might like to add)!
 // @author       ᔕᖺᘎᕊ (http://stackexchange.com/users/4337810/)
 // @match        *://*.stackexchange.com/*
@@ -81,7 +81,11 @@ function deleteImage(hash) { //delete the i.imgur.com version of the OLD ORIGINA
 
 if(GM_getValue('freehandCircles-access_token', -1) != -1) { //if an access token IS set
     $('.question img, .answer img').not('.fw img').each(function () { //add edit and delete buttons to all images
-        $(this).after("<input class='edit' style='position:absolute; right:10px;' type='button' value='edit'><br><input type='button' id='save' style='position:absolute; right:10px;' value='save' class='save'>");
+        $(this).parent().css({
+            'position': 'relative',
+            'display': 'inline-block'
+        });
+        $(this).after("<input class='edit' style='position:absolute; right:100px; top:10px;' type='button' value='edit'><br><input type='button' id='save' style='position:absolute; right:10px; top:10px' value='save' class='save'>");
     });
 
     $(document).on('click', '.edit', function () { //edit
