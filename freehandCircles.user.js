@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Freehand Circles Drawing Tool
 // @namespace    http://stackexchange.com/users/4337810/
-// @version      1.0.3
+// @version      1.0.4
 // @description  A userscript that lets you draw directly onto images on any Stack Exchange site to add freehand circles (or anything else you might like to add)!
 // @author       ᔕᖺᘎᕊ (http://stackexchange.com/users/4337810/)
 // @match        *://*.stackexchange.com/*
@@ -17,7 +17,6 @@
 // @grant        GM_getValue
 // @updateURL    https://github.com/shu8/Freehand-Circles-Drawing-Tool/raw/master/freehandCircles.user.js
 // ==/UserScript==
-
 if (window.location.href.indexOf('/users/') > -1) { //Add the add access token link
     $('.additional-links').append('<span class="lsep">|</span><a href="javascript:;" id="accessTokenLink-freehandCircles">freehand circles access-token</a>');
     $('.sub-header-links.fr').append('<span class="lsep">|</span><a href="javascript:;" id="accessTokenLink-freehandCircles">freehand circles access-token</a>'); //Old profile (pre Feb-2015)
@@ -85,10 +84,21 @@ if(GM_getValue('freehandCircles-access_token', -1) != -1) { //if an access token
             'position': 'relative',
             'display': 'inline-block'
         });
-        $(this).after("<input class='edit' style='position:absolute; right:100px; top:10px;' type='button' value='edit'><br><input type='button' id='save' style='position:absolute; right:10px; top:10px' value='save' class='save'>");
+        $(this).after("<input class='edit' style='position:absolute; right:50px; bottom:1px;' type='button' value='edit'><br><input type='button' id='save' style='position:absolute; right:1px; bottom:1px' value='save' class='save'>");
     });
-
+    
     $(document).on('click', '.edit', function () { //edit
+        $(this).hide();        
+        //Toolbar:
+        $(this).after("<div id='freehand-toolbar'>Colours: </div>");
+        $('#freehand-toolbar').after("<br>Thickness: <input id='freehand-toolbarRange' type='range' min='1' max='10' value='5'>"); //width
+        var colors = ['red', 'white', 'black', 'pink']; //set colours
+        for(i=0;i<colors.length;i++) { 
+            $('#freehand-toolbar').after("<button id='freehand-toolbar-"+colors[i]+"'>"+colors[i]+"</button>");
+        }
+        $('#freehand-toolbar').after("<input id='freehand-toolbar-otherColor' type='color'>"); //manual colours
+        
+        //Setup variables:
         var origImage = $(this).parent().find('img');
         var height = origImage.height(),
             width = origImage.width();
@@ -108,6 +118,16 @@ if(GM_getValue('freehandCircles-access_token', -1) != -1) { //if an access token
             //Settings:
             canvas.freeDrawingBrush.color = "red";
             canvas.freeDrawingBrush.width = 5;
+            
+            $(document).on('click', 'button[id*="freehand-toolbar-"]', function() {
+                canvas.freeDrawingBrush.color = $(this).text();
+            });            
+            $(document).on('change', '#freehand-toolbar-otherColor', function() {
+                canvas.freeDrawingBrush.color = $(this).val();
+            });
+            $(document).on('change', '#freehand-toolbarRange', function() {
+                canvas.freeDrawingBrush.width = $(this).val();
+            });
 
             //background image (ie *the* image):
             fabric.Image.fromURL(newLink, function (oImg) { //use 'newLink' <-- which is the NEW link at imgur.com and NOT stack.imgur.com because stack.imgur.com does not support CORS :(
@@ -121,17 +141,19 @@ if(GM_getValue('freehandCircles-access_token', -1) != -1) { //if an access token
             });
 
             $(document).on('click', '.save', function() { //save
+                $('.edit').show();
                 var dataURL = canvas.toDataURL({format:'png'}), //DATA URL as a png    
                     link,
                     sitename = $(location).attr('hostname'),
                     accessToken = GM_getValue('freehandCircles-access_token'),
+                    key = 'zOQ03LXlnDCLSM7yV)UVww((',
                     editURL;
                 $that = $(this);
                 addToImgurData(dataURL, function(data) { //save dataurl to imgur
                     parent = $that.parents('div.question,div.answer');
                     if(parent.hasClass('question')) { //for questions
                         id = parent.attr('data-questionid');
-                        link = "https://api.stackexchange.com/2.2/questions/"+id+"?order=desc&sort=activity&site="+sitename+"&filter=!9YdnSIoKx"; //form the stackexchange api link
+                        link = "https://api.stackexchange.com/2.2/questions/"+id+"?order=desc&sort=activity&site="+sitename+"&access_token="+accessToken+"&key="+key+"&filter=!9YdnSIoKx"; //form the stackexchange api link
                         editURL = "https://api.stackexchange.com/2.2/questions/"+id+"/edit";
                         $.getJSON(link, function(json) { //edit the post with the new link
                             body = json.items[0].body_markdown;
@@ -148,7 +170,7 @@ if(GM_getValue('freehandCircles-access_token', -1) != -1) { //if an access token
                                     'tags': tags.join(' '),                                    
                                     'body': y.replace(/&gt;/g, '>').replace(/&#39;/g, "'").replace(/&quot;/, '"').replace(/&lt;/g, "<").replace(/&amp;/g, "&"),
                                     'site': sitename,
-                                    'key': 'zOQ03LXlnDCLSM7yV)UVww((',
+                                    'key': key,
                                     'access_token': accessToken,
                                     'filter': '!9YdnSMlgz',
                                     'comment': 'Added freehand drawings (added by <http://stackapps.com/q/6353/26088>!)'
@@ -160,7 +182,7 @@ if(GM_getValue('freehandCircles-access_token', -1) != -1) { //if an access token
                         });
                     } else { //for answers
                         id = parent.attr('data-answerid');
-                        link = "https://api.stackexchange.com/2.2/answers/"+id+"?order=desc&sort=activity&site="+sitename+"&filter=!9YdnSMldD"; //form the stackexchange api link
+                        link = "https://api.stackexchange.com/2.2/answers/"+id+"?order=desc&sort=activity&site="+sitename+"&access_token="+accessToken+"&key="+key+"&filter=!9YdnSMldD"; //form the stackexchange api link
                         editURL = "https://api.stackexchange.com/2.2/answers/"+id+"/edit";
                         $.getJSON(link, function(json) { //edit the post with the new link
                             body = json.items[0].body_markdown;
