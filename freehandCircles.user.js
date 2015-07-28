@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Freehand Circles Drawing Tool
 // @namespace    http://stackexchange.com/users/4337810/
-// @version      1.0.5
+// @version      1.0.6
 // @description  A userscript that lets you draw directly onto images on any Stack Exchange site to add freehand circles (or anything else you might like to add)!
 // @author       ᔕᖺᘎᕊ (http://stackexchange.com/users/4337810/)
 // @match        *://*.stackexchange.com/*
@@ -87,16 +87,16 @@ if(GM_getValue('freehandCircles-access_token', -1) != -1) { //if an access token
         $(this).after("<input class='edit' style='position:absolute; right:50px; bottom:1px;' type='button' value='edit'><br><input type='button' id='save' style='position:absolute; right:1px; bottom:1px' value='save' class='save'>");
     });
     
-    $(document).on('click', '.edit', function () { //edit
+    $(document).on('click', '.edit', function (e) { //edit
         $(this).hide();        
         //Toolbar:
         $(this).after("<div id='freehand-toolbar'>Colours: </div>");
-        $('#freehand-toolbar').after("<br>Thickness: <input id='freehand-toolbarRange' type='range' min='1' max='10' value='5'>"); //width
+        $('#freehand-toolbar').after("<br>Thickness: <input class='freehand-toolbar-button' id='freehand-toolbarRange' type='range' min='1' max='10' value='5'>"); //width
         var colors = ['red', 'white', 'black', 'pink']; //set colours
         for(i=0;i<colors.length;i++) { 
-            $('#freehand-toolbar').after("<button id='freehand-toolbar-"+colors[i]+"'>"+colors[i]+"</button>");
+            $('#freehand-toolbar').after("<button class='freehand-toolbar-button' id='freehand-toolbar-"+colors[i]+"'>"+colors[i]+"</button>");
         }
-        $('#freehand-toolbar').after("<input id='freehand-toolbar-otherColor' type='color'>"); //manual colours
+        $('#freehand-toolbar').after("<input class='freehand-toolbar-button' id='freehand-toolbar-otherColor' type='color'>"); //manual colours
         
         //Setup variables:
         var origImage = $(this).parent().find('img');
@@ -109,7 +109,14 @@ if(GM_getValue('freehandCircles-access_token', -1) != -1) { //if an access token
                 deletehash = result.data.deletehash;
             //Add the new canvas:
             $that.parent().find('img').replaceWith("<div id='wrapper' style='position:relative; display:inline-block;'><canvas style='position:absolute' id='edit_canvas' height='" + height + "' width='" + width + "'></canvas></div>");
-
+            $that.parent().click(function(e) {
+                if($(e.target).is('.save, .freehand-toolbar-button')){
+                    e.preventDefault();
+                    return;
+                }
+                return false;
+            });
+            
             //initalize canvas with fabric.js
             var canvas = window._canvas = new fabric.Canvas('edit_canvas', {
                 isDrawingMode: 1
@@ -209,6 +216,7 @@ if(GM_getValue('freehandCircles-access_token', -1) != -1) { //if an access token
                 }); //addToImgurData callback
             }); //save click handler
         }); //addToImgurURL callback
+        return false;
     }); //edit click handler
 } else { //if access token is not set
     console.log('Please enter an access token. See more details at http://shu8.github.io/Freehand-Circles-Drawing-Tool');
