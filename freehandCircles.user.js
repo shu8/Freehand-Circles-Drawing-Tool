@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Freehand Circles Drawing Tool
 // @namespace    http://stackexchange.com/users/4337810/
-// @version      1.0.6
+// @version      1.0.7
 // @description  A userscript that lets you draw directly onto images on any Stack Exchange site to add freehand circles (or anything else you might like to add)!
 // @author       ᔕᖺᘎᕊ (http://stackexchange.com/users/4337810/)
 // @match        *://*.stackexchange.com/*
@@ -89,14 +89,6 @@ if(GM_getValue('freehandCircles-access_token', -1) != -1) { //if an access token
     
     $(document).on('click', '.edit', function (e) { //edit
         $(this).hide();        
-        //Toolbar:
-        $(this).after("<div id='freehand-toolbar'>Colours: </div>");
-        $('#freehand-toolbar').after("<br>Thickness: <input class='freehand-toolbar-button' id='freehand-toolbarRange' type='range' min='1' max='10' value='5'>"); //width
-        var colors = ['red', 'white', 'black', 'pink']; //set colours
-        for(i=0;i<colors.length;i++) { 
-            $('#freehand-toolbar').after("<button class='freehand-toolbar-button' id='freehand-toolbar-"+colors[i]+"'>"+colors[i]+"</button>");
-        }
-        $('#freehand-toolbar').after("<input class='freehand-toolbar-button' id='freehand-toolbar-otherColor' type='color'>"); //manual colours
         
         //Setup variables:
         var origImage = $(this).parent().find('img');
@@ -108,7 +100,16 @@ if(GM_getValue('freehandCircles-access_token', -1) != -1) { //if an access token
             var newLink = result.data.link,
                 deletehash = result.data.deletehash;
             //Add the new canvas:
-            $that.parent().find('img').replaceWith("<div id='wrapper' style='position:relative; display:inline-block;'><canvas style='position:absolute' id='edit_canvas' height='" + height + "' width='" + width + "'></canvas></div>");
+            $that.parent().replaceWith("<div id='wrapper' style='position:relative; display:inline-block;'><canvas style='position:absolute' id='edit_canvas' height='" + height + "' width='" + width + "'></canvas><br><input type='button' id='save' style='position:absolute; right:1px; bottom:1px' value='save' class='save'></div>");
+            //Toolbar:
+            $('#edit_canvas').after("<div id='freehand-toolbar'>Colours: </div>");
+            $('#freehand-toolbar').after("<br>Thickness: <input class='freehand-toolbar-button' id='freehand-toolbarRange' type='range' min='1' max='10' value='5'>"); //width
+            var colors = ['red', 'white', 'black', 'pink']; //set colours
+            for(i=0;i<colors.length;i++) { 
+                $('#freehand-toolbar').after("<button class='freehand-toolbar-button' id='freehand-toolbar-"+colors[i]+"'>"+colors[i]+"</button>");
+            }
+            $('#freehand-toolbar').after("<input class='freehand-toolbar-button' id='freehand-toolbar-otherColor' type='color'>"); //manual colours
+
             $that.parent().click(function(e) {
                 if($(e.target).is('.save, .freehand-toolbar-button')){
                     e.preventDefault();
